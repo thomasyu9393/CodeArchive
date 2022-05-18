@@ -1,8 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 #define ll long long
-#define eb emplace_back
-#define iter(x) begin(x), end(x)
 const int maxn = 300005;
 
 struct SegTree {
@@ -36,14 +34,11 @@ struct SegTree {
 		upd(ql, qr, x, mid+1, r, o<<1|1);
 		tr[o] = tr[o<<1] + tr[o<<1|1];
 	}
-} sgt1, sgt2, sgt3;
+} sgt[2];
 
-int a[maxn];
+int a[maxn], mp[maxn]{};
 int ql[maxn], qr[maxn], id[maxn];
 ll ans[maxn];
-int mp[maxn];
-vector<pair<int, int>> v;
-set<int> st;
 
 signed main() {
 	ios_base::sync_with_stdio(false), cin.tie(0);
@@ -51,18 +46,7 @@ signed main() {
 	cin >> n >> q;
 	for (int i=1; i<=n; ++i) {
 		cin >> a[i];
-		st.insert(a[i]);
-		int lst = mp[a[i]];
-		v.eb(lst, i);
-		mp[a[i]] = i;
-		if (!lst && i > 1) {
-			sgt2.upd(1, i-1, 1, 1, n, 1);
-		}
 	}
-	int NN = st.size();
-	sort(iter(v), [&](pair<int, int> i, pair<int, int> j) {
-		return i.second < j.second;
-	});
 	for (int i=0; i<q; ++i) {
 		cin >> ql[i] >> qr[i];
 		id[i] = i;
@@ -70,38 +54,18 @@ signed main() {
 	sort(id, id + q, [&](int i, int j) {
 		return qr[i] < qr[j];
 	});
-	int vc = 0, qc = 0;
-	for (int i=1; i<=n; ++i) {
-		mp[i] = 0;
-	}
-	st.clear();
+	int qc = 0;
 	for (int R=1; R<=n; ++R) {
 		int lst = mp[a[R]];
-		st.insert(a[R]);
-		sgt3.upd(R, R, st.size(), 1, n, 1);
-		if (!lst && R > 1) {
-			sgt2.upd(1, R-1, -1, 1, n, 1);
-			sgt3.upd(R, R, -1, 1, n, 1);
-		} else {
-			sgt3.upd(lst+1, R, -1, 1, n, 1);
-		}
-		while (vc < v.size() && v[vc].second == R) {
-			auto [l, r] = v[vc];
-			sgt1.upd(l+1, r, -r+1, 1, n, 1);
-			vc++;
-		}
+		sgt[0].upd(lst+1, R, -R+1, 1, n, 1);
+		sgt[1].upd(lst+1, R, 1, 1, n, 1);
 		while (qc < q && qr[id[qc]] == R) {
-			int cur = id[qc];
-			ll len = qr[cur] - ql[cur] + 1;
-			ll w = sgt1.query(ql[cur], R, 1, n, 1);
-			ll w2 = sgt2.query(ql[cur], R, 1, n, 1);
-			ll w3 = sgt3.query(ql[cur], R, 1, n, 1);
-			ll tmp = len * NN * R + w;
-			tmp -= w2 * R; //front
-			tmp -= w3 * R; //back
-			ans[cur] = tmp;
-			qc++;
+			int cur = id[qc++];
+			ll w = sgt[0].query(ql[cur], R, 1, n, 1);
+			ll c = sgt[1].query(ql[cur], R, 1, n, 1);
+			ans[cur] = c * R + w;
 		}
+		if (qc == q) break;
 		mp[a[R]] = R;
 	}
 	for (int i=0; i<q; ++i) {
